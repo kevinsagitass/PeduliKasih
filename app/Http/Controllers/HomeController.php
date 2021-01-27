@@ -34,7 +34,13 @@ class HomeController extends Controller
         ->orderBy('created_at', 'DESC')
         ->paginate(5);
 
-        return view('home', ['events' => $onGoingEvents]);
+
+        $pastEvents = Event::query()
+        ->where('event_end_date', '<', Carbon::now())
+        ->orderBy('created_at', 'DESC')
+        ->paginate(5);
+
+        return view('home', ['events' => $onGoingEvents, 'pastEvents' => $pastEvents]);
     }
 
     public function searchEvent(Request $request)
@@ -54,22 +60,43 @@ class HomeController extends Controller
                 ->where('event_end_date', '>=', Carbon::now())
                 ->orderBy('created_at', 'DESC')
                 ->paginate(5);
+
+                $pastEvents = Event::query()
+                ->where(function(Builder $query) use ($q) {
+                    return $query->where('event_name','LIKE','%'.$q.'%')
+                    ->orWhere('event_start_date', 'LIKE', '%'.$q.'%')
+                    ->orWhere('event_end_date', 'LIKE', '%'.$q.'%')
+                    ->orWhere('event_organizer', 'LIKE', '%'.$q.'%');
+                })
+                ->where('event_end_date', '<', Carbon::now())
+                ->orderBy('created_at', 'DESC')
+                ->paginate(5);
             }else{
                 $events = Event::query()
                 ->where('event_end_date', '>=', Carbon::now())
                 ->orderBy('created_at', 'DESC')
                 ->paginate(5);
+
+                $pastEvents = Event::query()
+                ->where('event_end_date', '<', Carbon::now())
+                ->orderBy('created_at', 'DESC')
+                ->paginate(5);
             }
             
 
-            return view('home')->with(['events' => $events, 'notFound' => true]);
+            return view('home')->with(['events' => $events, 'notFound' => true, 'pastEvents' => $pastEvents]);
         } else {
             $events = Event::query()
             ->where('event_end_date', '>=', Carbon::now())
             ->orderBy('created_at', 'DESC')
             ->paginate(5);
 
-            return view('home')->with(['events' => $events]);
+            $pastEvents = Event::query()
+            ->where('event_end_date', '<', Carbon::now())
+            ->orderBy('created_at', 'DESC')
+            ->paginate(5);
+
+            return view('home')->with(['events' => $events, 'pastEvents' => $pastEvents]);
         }
     }
 

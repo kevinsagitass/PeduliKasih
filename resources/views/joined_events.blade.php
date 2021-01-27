@@ -6,7 +6,7 @@
     <div class="card" style="box-shadow: 10px 10px grey;">
         <div class="card-header text-center">
             <div class="col-md-12">
-                <h1 class="title tableHeaderTitle">Managed Events</h1>
+                <h1 class="title tableHeaderTitle">Joined Events</h1>
             </div>
         </div>
         <div class="card-body">

@@ -122,18 +122,20 @@
                            </table>
                            <div class="row" style="margin-top: 5%">
                                 <div class="col-md-4 text-center">
-                                    @if(DB::table('roles')->where('id', '=', Auth::User()->role_id)->first()->roleName == "Promotor" && $event->user_id == Auth::User()->id)
+                                    @if(DB::table('roles')->where('id', '=', Auth::User()->role_id)->first()->roleName == "Promotor" && $event->user_id == Auth::User()->id && $event->event_end_date >= $today)
                                         <a href="{{url('/update-event/'.$event->event_id)}}"><button style="width: 100%" class="btn btn-primary">Edit Event</button></a>
                                     @endif
                                 </div>
                                 <div class="col-md-4 text-center">
                                     @if(DB::table('roles')->where('id', '=', Auth::User()->role_id)->first()->roleName == "Volunteer")
-                                        @if($userJoined)
+                                        @if($userJoined && $event->event_end_date >= $today)
                                             <form class="row" action="{{'/unjoin-event/'.$event->event_id.'/user-id/'.Auth::User()->id}}" method="POST">
                                                 @csrf
                                                 <button style="width: 100%" class="btn btn-primary">Unjoin Event</button>
                                             </form>
-                                        @else
+                                        @elseif($event->event_end_date < $today)
+                                            <span class="text-danger">This Event has Passed</span>
+                                        @elseif(!$userJoined && $event->event_end_date >= $today)
                                             <form class="row" action="{{'/join-event/'.$event->event_id.'/user-id/'.Auth::User()->id}}" method="POST">
                                                 @csrf
                                                 <button style="width: 100%" class="btn btn-primary">Join Event</button>

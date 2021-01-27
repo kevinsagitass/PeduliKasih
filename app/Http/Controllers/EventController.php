@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -31,6 +32,19 @@ class EventController extends Controller
             'event_desc' => 'required',
             'event_location' => 'required',
             'event_start_date' => 'required|date|after_or_equal:today',
+            'event_end_date' => 'required|date|after_or_equal:event_start_date',
+            'event_organizer' => 'required',            
+        ]);
+        return $validator;
+    }
+
+    public function validateEventUpdateData($data)
+    {
+        $validator = Validator::make($data, [
+            'event_name' => 'required|max:20',
+            'event_desc' => 'required',
+            'event_location' => 'required',
+            'event_start_date' => 'required|date',
             'event_end_date' => 'required|date|after_or_equal:event_start_date',
             'event_organizer' => 'required',            
         ]);
@@ -101,7 +115,7 @@ class EventController extends Controller
             $participant->joined_date = Carbon::parse($participant->joined_date)->toDateTimeString();
         }
 
-        return view('event_detail', ['event' => $event, 'participants' => $participants, 'userJoined' => $userJoined]);
+        return view('event_detail', ['event' => $event, 'participants' => $participants, 'userJoined' => $userJoined, 'today' => Carbon::now()]);
     }
 
     public function joinEvent($eventId, $userId)
@@ -175,6 +189,8 @@ class EventController extends Controller
         ->where('event_id', '=', $eventId)
         ->delete();
 
+        unlink(public_path()."\EventPosters\\".$event->picture);
+
         $event->delete();
 
         return redirect('home');
@@ -205,6 +221,18 @@ class EventController extends Controller
 
         if(DB::table('roles')->where('id', '=', Auth::User()->role_id)->first()->roleName != "Promotor" || $event->user_id != Auth::User()->id){
             abort(403);
+        }
+
+        if($param['event_start_date'] < $event->event_start_date && $event->event_start_date < Carbon::now()) {
+            return redirect()->back()->withErrors(['Event Start Date Cannot be Earlier than before'])->withInput();
+        }else if($event->event_start_date >= Carbon::now() && $param['event_start_date'] < Carbon::now()){
+            return redirect()->back()->withErrors(['Event Start Date Cannot be Earlier than Today'])->withInput();
+        }
+
+        $validator = $this->validateEventUpdateData($param);
+
+        if($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $event->event_name = $param['event_name'];
